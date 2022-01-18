@@ -107,7 +107,7 @@
         </v-flex>
       </v-layout>
 
-      <div class="my-4 text-center" v-show="initialResultsLoaded">
+      <div class="my-4 text-center" v-show="initialResultsLoaded && resultNFTList.length>0">
         <Preloader v-show="searchLoading" text="loading..."></Preloader>
         <v-btn v-show="!searchLoading" @click="doSearch(true)">
           Load More<v-icon>mdi-refresh</v-icon>
@@ -271,12 +271,14 @@ export default {
         console.log(res)
         this.initialResultsLoaded = true
         this.pageLoaded++
-        const items = res.body.search_results
-        for (let i = 0; i < items.length; i++) {
-          const item = items[i]
-          this.resultNFTList.push(item)
+        if (res.body.response == 'OK') {
+          const items = res.body.search_results
+          for (let i = 0; i < items.length; i++) {
+            const item = items[i]
+            this.resultNFTList.push(item)
+          }
+          console.log(this.resultNFTList)
         }
-        console.log(this.resultNFTList)
       } catch (err) {
         console.log(err)
         this.searchLoadingError = "Eror getting results."
