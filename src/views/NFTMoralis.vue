@@ -109,9 +109,6 @@
               <v-tab key="tab2" class="">
                 Trading History
               </v-tab>
-              <v-tab key="tab3" class="">
-                Lowest NFT Price
-              </v-tab>
             </v-tabs>
 
             <v-tabs-items v-model="tab">
@@ -132,16 +129,6 @@
                   hidenftinfo
                 >
                 </EventListOpenSea>
-
-              </v-tab-item>
-
-              <v-tab-item key="tab3" class="py-4 px-2">
-
-                <NFTLowestPriceMoralis
-                  :contractaddress="contractAddress"
-                  :networkid="network.id"
-                >
-                </NFTLowestPriceMoralis>
 
               </v-tab-item>
 

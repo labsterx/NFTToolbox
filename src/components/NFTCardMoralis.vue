@@ -50,7 +50,30 @@
       <div v-if="name" class="d-inline-block text-truncate" style="max-width: 100%">{{ name }}</div>
       <div v-if="showDescription" class="d-inline-block text-truncate"  style="max-width: 100%">{{ description }}&nbsp;</div>
 
+    <div v-if="isMyToken && showSendNFTForm"
+      class="grey lighten-4 pa-2"
+      v-on:click.prevent
+    >
+      <div class="mb-2">
+        <v-text-field
+          hide-details
+          label="Recipient's Account"
+          v-model.trim="sendToAccountAddress"
+          outlined
+          dense
+          small
+          clearable
+          required
+        ></v-text-field>
+      </div>
+      <div class="mx-2 text-center">
+        <v-btn secondary small class="mr-1" @click="sendNFT">Transfer</v-btn>
+        <v-btn secondary outlined small class="ml-1" @click="toggleTransferNFTForm">Hide</v-btn>
+      </div>
+    </div>
+
     </v-card-text>
+
 
     <v-card-actions>
       <v-spacer></v-spacer>
@@ -105,12 +128,18 @@
             </v-list-item-title>
           </v-list-item>
 
+          <v-list-item v-if="isMyToken">
+            <v-list-item-title>
+              <v-btn text @click="toggleTransferNFTForm">Transfer This NFT</v-btn>
+            </v-list-item-title>
+          </v-list-item>
+
         </v-list>
       </v-menu>
 
-
-
     </v-card-actions>
+
+
 
   </v-card>
 
@@ -139,6 +168,8 @@ export default {
       removeLikedSuccess: false,
       addHighlightSuccess: false,
       removeHighlightSuccess: false,
+      showSendNFTForm: false,
+      sendToAccountAddress: null,
     }
   },
   computed: {
@@ -187,6 +218,14 @@ export default {
     contractAddress: function () {
       return this.info.token_address
     },
+    contractType: function () {
+      if (this.info.contract_type) {
+        return this.info.contract_type
+      }
+      else {
+        return null
+      }
+    },
     token_id: function () {
       return this.info.token_id
     },
@@ -227,8 +266,8 @@ export default {
     },
     isMyToken: function () {
       // return false
-      if (this.info.owner.address) {
-        if (this.info.owner.address.toLowerCase() == this.myaddress.toLowerCase()) {
+      if (this.info.owner_of) {
+        if (this.info.owner_of.toLowerCase() == this.myaddress.toLowerCase()) {
           return true
         }
       }
@@ -360,6 +399,31 @@ export default {
       } finally {
         this.likeLoading = false
       }
+    },
+
+    async sendNFT (evt) {
+      evt.preventDefault()
+      if (!this.isMyToken || !this.sendToAccountAddress || !this.contractType) {
+        return
+      }
+      const options = {
+        type: this.contractType.toLowerCase(),
+        receiver: this.sendToAccountAddress.toLowerCase(),
+        contractAddress: this.contractAddress,
+        tokenId: this.token_id,
+      }
+
+      try {
+        let transaction = await Moralis.transfer(options)
+        console.log(transaction)
+      } catch (err) {
+        console.log(err)
+      }
+    },
+
+    toggleTransferNFTForm (evt) {
+      evt.preventDefault()
+      this.showSendNFTForm = !this.showSendNFTForm
     },
 
     async addHighlight () {

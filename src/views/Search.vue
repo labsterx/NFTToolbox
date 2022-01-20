@@ -8,65 +8,76 @@
     <h2 class="text-center mt-4">Search</h2>
     <div class="text-center mb-2">(Powered by NFTPort)</div>
 
-    <v-row align="center" class="mx-3">
+    <v-form>
+      <v-row align="center" class="mx-3">
 
-      <v-col cols="12" sm="12" md="8" v-if="searchType && searchType.val !== 'nft-counterfeit'">
-        <v-text-field
-          hide-details
-          :label="searchType.hint"
-          v-model.trim="searchInput"
-          outlined
-          dense
-          single-line
-          clearable
-        ></v-text-field>
-      </v-col>
+        <v-col cols="12" sm="12" md="8"
+          v-if="searchType && searchType.val !== 'nft-counterfeit' && searchType.val !== 'nft-address'"
+        >
+          <v-text-field
+            hide-details
+            :label="searchType.hint"
+            v-model.trim="searchInput"
+            outlined
+            dense
+            single-line
+            clearable
+            required
+          ></v-text-field>
+        </v-col>
 
-      <v-col cols="12" sm="12" md="5" v-if="searchType && searchType.val == 'nft-counterfeit'">
-        <v-text-field
-          hide-details
-          label="Contract Address"
-          v-model.trim="searchContractAddress"
-          outlined
-          dense
-          single-line
-          clearable
-        ></v-text-field>
-      </v-col>
+        <v-col cols="12" sm="12" md="5"
+          v-if="searchType && (searchType.val == 'nft-counterfeit' || searchType.val == 'nft-address')"
+        >
+          <v-text-field
+            hide-details
+            label="Contract Address"
+            v-model.trim="searchContractAddress"
+            outlined
+            dense
+            single-line
+            clearable
+            required
+          ></v-text-field>
+        </v-col>
 
-      <v-col cols="12" sm="12" md="3" v-if="searchType && searchType.val == 'nft-counterfeit'">
-        <v-text-field
-          hide-details
-          label="Token Id"
-          v-model.trim="searchTokenId"
-          outlined
-          dense
-          single-line
-          clearable
-        ></v-text-field>
-      </v-col>
+        <v-col cols="12" sm="12" md="3"
+          v-if="searchType && (searchType.val == 'nft-counterfeit' || searchType.val == 'nft-address')"
+        >
+          <v-text-field
+            hide-details
+            label="Token Id"
+            v-model.trim="searchTokenId"
+            outlined
+            dense
+            single-line
+            clearable
+            required
+          ></v-text-field>
+        </v-col>
 
-      <v-col cols="12" sm="12" md="3">
-        <v-select
-          class='mt-6'
-          v-model="searchType"
-          :items="searchTypeOptions"
-          item-text="display"
-          item-value="val"
-          label=""
-          dense
-          solo
-          return-object
-        ></v-select>
-      </v-col>
+        <v-col cols="12" sm="12" md="3">
+          <v-select
+            class='mt-6'
+            v-model="searchType"
+            :items="searchTypeOptions"
+            item-text="display"
+            item-value="val"
+            label=""
+            dense
+            solo
+            return-object
+          ></v-select>
+        </v-col>
 
-      <v-col cols="12" sm="12" md="1">
-        <v-btn>
-          <v-icon dark @click="doSearch()">mdi-magnify</v-icon>
-        </v-btn>
-      </v-col>
+        <v-col cols="12" sm="12" md="1">
+          <v-btn>
+            <v-icon dark @click="doSearch()">mdi-magnify</v-icon>
+          </v-btn>
+        </v-col>
 
-    </v-row>
+      </v-row>
+    </v-form>
 
   </v-card>
 
@@ -151,6 +162,7 @@ export default {
     searchType: { display: 'NFT Text Search', val: 'nft-text', hint: 'Enter Text related to an NFT' },
     searchTypeOptions: [
       { display: 'NFT Text Search', val: 'nft-text', hint: 'Enter Text related to an NFT' },
+      { display: 'NFT Address Search', val: 'nft-address', hint: 'Enter NFT info' },
       { display: 'Image Search By URL', val: 'img-url', hint: 'Enter Image URL'  },
       { display: 'NFT Counterfeit Detection', val: 'nft-counterfeit', hint: 'Enter NFT info'  },
       { display: 'User Account', val: 'user-account', hint: 'Enter account address'  },
@@ -216,6 +228,13 @@ export default {
         if (this.searchInput) {
           const cleanAddress = this.searchInput.toLowerCase()
           this.$router.push({ name: 'user', params: {userAddress: cleanAddress} })
+        }
+      }
+
+      if (this.searchType.val == 'nft-address') {
+       if (this.searchContractAddress && this.searchTokenId) {
+          this.$router.push({ name: 'nft', params: {
+            contractAddress: this.searchContractAddress, tokenId: this.searchTokenId } })
         }
       }
 
