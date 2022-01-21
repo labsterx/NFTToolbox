@@ -2,7 +2,9 @@
 node_modules
 /dist
 /release
+.firebase
 src/config/index.js
+
 
 # local env files
 .env.local

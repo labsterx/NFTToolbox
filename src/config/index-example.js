@@ -51,7 +51,7 @@ export const config = {
       affiliateAddress: '[replace]',
     },
     137: {
-      assetPage: "https://opensea.io/assets/",
+      assetPage: "https://opensea.io/assets/matic/",
       collectionPage: "https://opensea.io/collection/",
       affiliateAddress: '[replace]',
     },
