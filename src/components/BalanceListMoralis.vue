@@ -43,7 +43,9 @@
               </td>
               <td><strong style="font-size: 1.1rem">{{ item.symbol }}</strong></td>
               <td>{{ item.name }}</td>
-              <td><strong>{{ item.balanceDisplay }}</strong></td>
+              <td>
+                <AmountNumber :value="item.balanceDisplay"></AmountNumber>
+              </td>
               <td>
                 <v-btn icon small v-if="item.etherscanURL" :href="item.etherscanURL" target="_blank">
                 <v-icon small>mdi-open-in-new</v-icon>
@@ -61,6 +63,7 @@
 
 <script>
 import Preloader from "@/components/Preloader"
+import AmountNumber from "@/components/AmountNumber"
 import Moralis from 'moralis'
 // import { getCurrentNetworkID, getCurrentAccount } from '@/utils/utils'
 import {mapActions, mapGetters, mapState} from 'vuex'
@@ -76,6 +79,7 @@ export default {
   }),
   components: {
     Preloader,
+    AmountNumber,
   },
   computed: {
     ...mapGetters({
@@ -107,6 +111,21 @@ export default {
       this.balanceList = []
 
       try {
+
+        const ETHBalance = await web3.eth.getBalance(this.useraddress)
+        console.log('ETHBalance', ETHBalance)
+        const ETHInfo = {
+          balance: ETHBalance,
+          balanceDisplay: Moralis.Units.FromWei(ETHBalance, 18),
+          decimals: 18,
+          name: 'Ether',
+          symbol: 'ETH',
+        }
+        if (this.network.id == 137) {
+          ETHInfo.name = 'MATIC'
+          ETHInfo.symbol = 'MATIC'
+        }
+        this.balanceList.push(ETHInfo)
 
         // console.log('this network', this.network.id)
         const moralisNetworkSymbol = config.moralisNetworkSymbol[this.network.id]
