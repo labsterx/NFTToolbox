@@ -11,7 +11,7 @@ import Watchlist from './views/Watchlist.vue'
 import User from './views/User.vue'
 import Search from './views/Search.vue'
 import NFTNFTPort from './views/NFTNFTPort.vue'
-import NFTMoralis from './views/NFTMoralis.vue'
+import NFTAlchemy from './views/NFTAlchemy.vue'
 
 // import Login from './views/Login.vue'
 // import Register from './views/Register.vue'
@@ -80,7 +80,7 @@ const router = new Router({
         {
           path: 'nft/:contractAddress/:tokenId',
           name: 'nft',
-          component: NFTMoralis
+          component: NFTAlchemy
         },
 
         {

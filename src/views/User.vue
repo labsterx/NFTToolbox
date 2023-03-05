@@ -97,22 +97,26 @@
 
         <v-tab-item key="tab1" class="">
 
-          <NFTListMoralis v-if="initializationDone"
+          <NFTListAlchemy v-if="initializationDone"
             title="NFTs"
             :useraddress="userAddress"
+            list-type="byOwner"
+            :api-root-url="apiRootURLAlchemy"
+            :owner-address="userAddress"
+            :apiurl="apiURL.NFTList"            
           >
-          </NFTListMoralis>
+          </NFTListAlchemy>
 
         </v-tab-item>
 
 
         <v-tab-item key="tab2">
 
-          <EventListOpenSea v-if="initializationDone"
+          <UserActivityListNFTPort v-if="initializationDone"
             :useraddress="userAddress"
             :networkid="network.id"
           >
-          </EventListOpenSea>
+          </UserActivityListNFTPort>
 
         </v-tab-item>
 
@@ -138,7 +142,7 @@
 <script>
 import Moralis from 'moralis'
 import BalanceListMoralis from "@/components/BalanceListMoralis"
-import NFTListMoralis from "@/components/NFTListMoralis"
+import NFTListAlchemy from "@/components/NFTListAlchemy"
 import NFTListNFTPort from "@/components/NFTListNFTPort"
 import UserActivityListNFTPort from "@/components/UserActivityListNFTPort"
 import UserActivityListMoralis from "@/components/UserActivityListMoralis"
@@ -156,7 +160,7 @@ export default {
     Preloader,
     BalanceListMoralis,
     NFTListNFTPort,
-    NFTListMoralis,
+    NFTListAlchemy,
     UserActivityListNFTPort,
     UserActivityListMoralis,
     EventListOpenSea,
@@ -222,6 +226,9 @@ export default {
       if (this.network.id == 137) {
         chainName = 'polygon'
       }
+
+      this.apiRootURLAlchemy = config.AlchemyAPI[this.network.id].URLRoot
+            
       this.apiURL.NFTList = config.NFTPortAPI.URLRoot
                 + '/v0/accounts/' + this.userAddress
                + '?include=metadata&chain=' + chainName
