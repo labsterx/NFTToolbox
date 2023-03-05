@@ -12,7 +12,7 @@
 
       <!-- Wallet not available -->
       <div v-if="!walletAvailable">
-        <v-card class="mx-auto" max-width="400"  color="#a3e6ff">
+        <v-card class="mx-auto" max-width="400">
           <v-card-text class="pa-7 text-center">
             <div class="text-center mb-4">
               <v-icon large color="error">mdi-alert-circle-outline</v-icon>
@@ -24,33 +24,52 @@
         </v-card>
        </div>
 
+      <!-- Wallet not connected -->
+      <div v-if="walletAvailable && !walletConnected">
+        <v-card class="mx-auto" max-width="400" :loading="loading" style="background: transparent;">
+          <v-card-text class="pa-7 text-center">
+            <div class="headline text-center mb-3">
+              <span>Connect Wallet</span>
+            </div>
+            <v-btn large rounded color="primary"
+              @click="connectWallet"
+              :disabled="loading"
+            >
+              Connect Wallet
+            </v-btn>
+            <div v-show="error.connectWallet" class="login-error-section mt-2">
+              {{ error.connectWallet }}
+            </div>
+          </v-card-text>
+
+        </v-card>
+       </div>
 
       <!-- Network Not Supported -->
-      <div v-if="walletAvailable && !networkSupported">
-        <v-card class="mx-auto" max-width="400" color="#a3e6ff">
+      <div v-if="walletAvailable && walletConnected && !networkSupported">
+        <v-card class="mx-auto" max-width="400">
           <v-card-text class="pa-7 text-center">
             <div class="text-center mb-4">
               <v-icon large color="error">mdi-alert-circle-outline</v-icon>
             </div>
             <div>
-              Sorry, this network is Not Supported. Please use Ethereum Mainet or Polygon.
+              Sorry, this network is Not Supported. Please use Mainet or Rinkeby.
             </div>
           </v-card-text>
         </v-card>
       </div>
 
-
        <!-- Login with wallet -->
-       <div v-if="walletAvailable && networkSupported">
+       <div v-if="walletAvailable && walletConnected && networkSupported">
 
-        <v-card class="mx-auto" max-width="400"  color="#a3e6ff" :loading="loading">
+        <v-card class="mx-auto" max-width="400" :loading="loading">
 
           <v-card-text class="pa-7 text-center">
             <div class="headline text-center mb-3">Log in</div>
             <div class="mb-3">Please Sign Wallet</div>
 
             <v-btn large rounded color="primary"
-              @click="loginWithWallet"
+              @click="logInBackend"
               :disabled="loading"
             >
               Login Using MetaMask
@@ -75,7 +94,6 @@
 import { config } from '@/config'
 import Preloader from "@/components/Preloader"
 import {mapActions, mapGetters, mapState} from 'vuex'
-import Moralis from 'moralis'
 export default {
   components: {
     Preloader,
@@ -83,9 +101,12 @@ export default {
   data: () => ({
     config: config,
     initializationDone: false,
+    networkSupported: false,
     loading: false,
+    walletConnected: false,
     error: {
-      loginWithWallet: null,
+      connectWallet: null,
+      login: null
     },
   }),
   computed: {
@@ -93,14 +114,6 @@ export default {
       network: 'getNetwork',
       myAddress: 'getUserAccount',
     }),
-    currentNetworkID: function() {
-      if (window.ethereum) {
-        return parseInt(window.ethereum.networkVersion)
-      }
-      else {
-        return null
-      }
-    },
     walletAvailable: function () {
       return window.ethereum
     },
@@ -108,26 +121,48 @@ export default {
   methods: {
     ...mapActions(['loadNetwork']),
     async init() {
-      // console.log('window.ethereum', window.ethereum)
+      // console.log(window.ethereum)
       this.initializationDone = false
-      this.networkSupported = await this.isNetworkSupported()
-
-      if (this.walletAvailable && this.networkSupported) {
+      this.walletConnected = this.isWalletConnected()
+      this.networkSupported = this.isNetworkSupported()
+      this.setupWalletListner()
+      if (this.walletConnected && this.networkSupported) {
         await this.loadNetwork(true)
       }
       this.initializationDone = true
     },
 
+    setupWalletListner () {
+      if (window.ethereum) {
+        window.ethereum.autoRefreshOnNetworkChange = false
+        const that = this
+        // window.ethereum.on('networkChanged', function (chainId) {
+        //   console.log('Chain change detected.')
+        //   that.init()
+        // })
+        window.ethereum.on('chainChanged', function (chainId) {
+          console.log('Chain change detected.')
+          that.logout()
+        })
+        window.ethereum.on('chainIdChanged', function (chainId) {
+          console.log('Chain change detected.')
+          that.logout()
+        })
+        window.ethereum.on('accountsChanged', function (accounts) {
+          console.log('account change detected.')
+          that.logout()
+        })
+      }
+    },
+
     isWalletConnected() {
-      // return window.Moralis && window.Moralis.User.current()
       return window.ethereum && window.ethereum.selectedAddress
     },
 
-    async isNetworkSupported() {
-      if (window.ethereum) {
-        const networkId = await window.web3.eth.net.getId()
-        console.log('network id', networkId)
-        // const networkId = parseInt(window.ethereum.networkVersion)
+    isNetworkSupported() {
+      if (this.isWalletConnected()) {
+        const networkId = parseInt(window.ethereum.networkVersion)
+        // console.log('networkid: ' + networkId)
         if (config.supportedNetworks[networkId]) {
           return true
         }
@@ -140,49 +175,96 @@ export default {
       }
     },
 
-    async loginWithWallet() {
-
+    async connectWallet() {
+      try {
         this.loading = true
-        this.error.loginWithWallet = null
-
-        // let user = Moralis.User.current();
-        // if (!user) {
-        try {
-          console.log('will run Moralis Web3 Auth')
-          const user = await Moralis.Web3.authenticate()
-          console.log("logged in user:", user);
-          // console.log(user.get("ethAddress"));
-          console.log("Moralis User Id", user.id);
-
-          const userId = user.id;
-          const ethAddress = user.get("ethAddress");
-
-          localStorage.setItem(config.localStorageKey.login, userId)
-          this.loading = false;
-
+        this.error.connectWallet = null
+        await window.ethereum.enable()
+        this.walletConnected = this.isWalletConnected()
+        this.networkSupported = this.isNetworkSupported()
+        if (this.walletConnected & this.networkSupported) {
           await this.loadNetwork()
-
-          console.log(this.network)
+        }
+        console.log(this.network)
         // console.log('defaultAccount', defaultAccount)
 
-          if (this.$route.query && this.$route.query.redirect &&
-            !this.$route.query.redirect.toLowerCase().includes('logout') &&
-            !this.$route.query.redirect.toLowerCase().includes('login')) {
-            const redirectPath = this.$route.query.redirect
-            console.log('redirect: ' + redirectPath)
-            this.$router.push({ path: redirectPath})
-          }
-          else {
-            // console.log('redirect: ' + config.defaultRedirect.appHome)
-            this.$router.push({ name: config.defaultRedirect.appHome })
-          }
+        this.loading = false
+      } catch (error) {
+        console.error(error)
+        this.error.connectWallet = "Wallect Connection Error"
+        this.loading = false
+      }
+    },
 
-        } catch(error) {
-          console.log(error);
-          this.error.loginWithWallet = "Wallect Connection Error"
-        };
-        // }
+    async logInBackend () {
+      this.loading = true
+      this.error.login = null
 
+      localStorage.removeItem(config.localStorageKey.login)
+
+      await this.loadNetwork()
+      // console.log(this.network)
+
+      // console.log(config)
+      const url = config.backendLogInURL
+      const siginInMessage = config.backendLogInMessage
+      // console.log('siginInMessage: ', siginInMessage)
+      const myAddress = this.myAddress
+      // console.log('myAddress', myAddress)
+      // console.log('ethereum Address', window.web3.eth.defaultAccount )
+      const networkId = this.network.id
+
+      // Use wallet to get the signature
+      let sig = null
+      try {
+        sig = await window.web3.eth.personal.sign(siginInMessage, myAddress)
+        console.log(sig)
+      } catch (err) {
+        console.log(err)
+        if (err.code && err.code === 4001) {
+          this.error.login = "Access Denied"
+        }
+        else {
+          this.error.login = "Login Error"
+        }
+        this.loading = false
+        return
+      }
+
+      // Log in backend
+      const loginData = {
+        user: myAddress,
+        sig: sig,
+        networkid: networkId
+      }
+
+      try {
+        const res = await this.$http.post(url, loginData)
+        // console.log(res)
+        const jwtToken = res.body.token
+        // console.log(jwtToken)
+        localStorage.setItem(config.localStorageKey.login, jwtToken)
+
+        // console.log('Redirect: ' + config.defaultRedirect.appHome)
+
+        if (this.$route.query && this.$route.query.redirect &&
+          !this.$route.query.redirect.toLowerCase().includes('logout') &&
+          !this.$route.query.redirect.toLowerCase().includes('login')) {
+          const redirectPath = this.$route.query.redirect
+          console.log('redirect: ' + redirectPath)
+          this.$router.push({ path: redirectPath})
+        }
+        else {
+          // console.log('redirect: ' + config.defaultRedirect.appHome)
+          this.$router.push({ name: config.defaultRedirect.appHome })
+        }
+      } catch (err) {
+        console.log(err)
+        this.error.login = "login Error"
+        return
+      } finally {
+        this.loading = false
+      }
     },
 
     logout () {

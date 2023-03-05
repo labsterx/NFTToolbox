@@ -10,34 +10,34 @@ import Web3 from 'web3'
 
 Vue.use(VueResource)
 
-// Vue.http.interceptors.push(function(request) {
-//   // console.log(request.url)
-//   if (request.url.includes(config.backendAPIURL)) {
-//     // console.log('this is a backend API call')
+Vue.http.interceptors.push(function(request) {
+  // console.log(request.url)
+  if (request.url.includes(config.backendAPIURL)) {
+    // console.log('this is a backend API call')
 
-//     const localSavedJwtToken = localStorage.getItem(config.localStorageKey.login)
-//     if (localSavedJwtToken) {
-//       const code = 'Bearer ' + localSavedJwtToken
-//       request.headers.set('Authorization', code)
-//       // console.log('VueResource added jwtToken')
-//     }
-//     else {
-//       // console.log('VueResource: jwtToken not available')
-//     }
+    const localSavedJwtToken = localStorage.getItem(config.localStorageKey.login)
+    if (localSavedJwtToken) {
+      const code = 'Bearer ' + localSavedJwtToken
+      request.headers.set('Authorization', code)
+      // console.log('VueResource added jwtToken')
+    }
+    else {
+      // console.log('VueResource: jwtToken not available')
+    }
 
-//     // Handle responses
-//     return function(response) {
-//       if (response.status === 401 || response.status === 419
-//         || response.status === 440 ) {
-//         console.log('401/419/440 response received')
-//         localStorage.removeItem(config.localStorageKey.login)
-//         location.reload()
-//       }
-//     }
+    // Handle responses
+    return function(response) {
+      if (response.status === 401 || response.status === 419
+        || response.status === 440 ) {
+        console.log('401/419/440 response received')
+        localStorage.removeItem(config.localStorageKey.login)
+        location.reload()
+      }
+    }
 
-//   }
+  }
 
-// })
+})
 
 Vue.config.productionTip = false
 
@@ -72,27 +72,6 @@ async function initNetwork() {
     window.web3 = new Web3(web3.currentProvider);
   }
 
-  // Start Moralis
-
-  Moralis.enableWeb3()
-
-  Moralis.start({
-    serverUrl: config.moralisAPI.serverURL,
-    appId: config.moralisAPI.applicationID,
-  })
-
-
-  Moralis.onAccountsChanged(() => {
-    localStorage.removeItem(config.localStorageKey.login)
-    Moralis.User.logOut()
-    window.location.reload()
-  })
-
-  Moralis.onChainChanged(() => {
-    // localStorage.removeItem(config.localStorageKey.login)
-    // Moralis.User.logOut()
-    window.location.reload()
-  })
 
 
 }
